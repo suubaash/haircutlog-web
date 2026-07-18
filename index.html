@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HaircutLog</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- Auth screen -->
+  <section id="screen-auth" class="screen active">
+    <div class="auth-card">
+      <h1>✂️ HaircutLog</h1>
+      <div class="form-group">
+        <label for="auth-email">Email</label>
+        <input type="email" id="auth-email" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="auth-password">Password</label>
+        <input type="password" id="auth-password" autocomplete="current-password">
+      </div>
+      <div class="error-text" id="auth-error"></div>
+      <button class="primary" id="btn-sign-in">Sign In</button>
+      <button class="secondary" id="btn-sign-up">Create Account</button>
+    </div>
+  </section>
+
+  <!-- Haircuts list screen -->
+  <section id="screen-haircuts" class="screen">
+    <div class="top-bar">
+      <h1>Haircuts</h1>
+      <button class="icon-button" id="btn-add-entry">＋</button>
+    </div>
+    <div id="haircuts-content"></div>
+  </section>
+
+  <!-- Nearby salons screen -->
+  <section id="screen-salons" class="screen">
+    <div class="top-bar">
+      <h1>Nearby Salons</h1>
+    </div>
+    <div id="salons-content"></div>
+  </section>
+
+  <!-- Tab bar -->
+  <nav class="tab-bar" id="tab-bar" style="display:none;">
+    <button class="tab-button active" data-screen="haircuts">
+      <span class="tab-icon">✂️</span>
+      <span>Haircuts</span>
+    </button>
+    <button class="tab-button" data-screen="salons">
+      <span class="tab-icon">📍</span>
+      <span>Nearby Salons</span>
+    </button>
+  </nav>
+
+  <!-- Add entry modal -->
+  <div class="modal-overlay" id="modal-add">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <button class="link-button" id="btn-cancel-add">Cancel</button>
+        <h2>New Haircut</h2>
+        <button class="link-button" id="btn-save-add">Save</button>
+      </div>
+      <div class="form-group">
+        <label for="add-date">Date</label>
+        <input type="date" id="add-date">
+      </div>
+      <img id="add-photo-preview" class="photo-picker-preview" style="display:none;">
+      <label class="photo-picker-label" id="add-photo-label">
+        <span>Tap to add a photo</span>
+        <input type="file" accept="image/*" capture="environment" id="add-photo-input" style="display:none;">
+      </label>
+      <div class="error-text" id="add-error"></div>
+    </div>
+  </div>
+
+  <!-- Detail modal -->
+  <div class="modal-overlay" id="modal-detail">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <button class="link-button" id="btn-close-detail">Close</button>
+        <h2>Haircut</h2>
+        <button class="link-button" id="btn-delete-detail">Delete</button>
+      </div>
+      <img id="detail-photo" class="detail-photo">
+      <div id="detail-date" style="text-align:center; font-weight:600;"></div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
