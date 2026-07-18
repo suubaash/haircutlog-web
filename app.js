@@ -5,6 +5,11 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInWithCredential,
+  signInWithRedirect,
+  getRedirectResult,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore,
@@ -64,6 +69,49 @@ el("btn-sign-up").addEventListener("click", async () => {
   } catch (error) {
     el("auth-error").textContent = error.message;
   }
+});
+
+el("btn-google-signin").addEventListener("click", async () => {
+  el("auth-error").textContent = "";
+  try {
+    await signInWithRedirect(auth, new GoogleAuthProvider());
+  } catch (error) {
+    el("auth-error").textContent = error.message;
+  }
+});
+
+el("btn-apple-signin").addEventListener("click", async () => {
+  el("auth-error").textContent = "";
+  const nativeBridge = window.webkit?.messageHandlers?.appleSignIn;
+  if (nativeBridge) {
+    nativeBridge.postMessage("signIn");
+    return;
+  }
+  try {
+    await signInWithRedirect(auth, new OAuthProvider("apple.com"));
+  } catch (error) {
+    el("auth-error").textContent = error.message;
+  }
+});
+
+// Called by native Swift code after a successful native Sign in with Apple.
+window.completeAppleSignIn = async (identityToken, rawNonce) => {
+  el("auth-error").textContent = "";
+  try {
+    const provider = new OAuthProvider("apple.com");
+    const credential = provider.credential({ idToken: identityToken, rawNonce });
+    await signInWithCredential(auth, credential);
+  } catch (error) {
+    el("auth-error").textContent = error.message;
+  }
+};
+
+window.reportAppleSignInError = (message) => {
+  el("auth-error").textContent = message;
+};
+
+getRedirectResult(auth).catch((error) => {
+  el("auth-error").textContent = error.message;
 });
 
 onAuthStateChanged(auth, (user) => {
