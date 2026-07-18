@@ -55,11 +55,13 @@ document.querySelectorAll(".tab-button").forEach((btn) => {
 
 el("btn-sign-in").addEventListener("click", async () => {
   el("auth-error").textContent = "";
+  setButtonLoading(el("btn-sign-in"), true, "Signing In…");
   try {
     await signInWithEmailAndPassword(auth, el("auth-email").value.trim(), el("auth-password").value);
   } catch (error) {
     el("auth-error").textContent = error.message;
   }
+  setButtonLoading(el("btn-sign-in"), false, "Sign In");
 });
 
 el("btn-sign-up").addEventListener("click", async () => {
@@ -70,6 +72,11 @@ el("btn-sign-up").addEventListener("click", async () => {
     el("auth-error").textContent = error.message;
   }
 });
+
+function setButtonLoading(button, isLoading, label) {
+  button.disabled = isLoading;
+  button.textContent = label;
+}
 
 el("btn-google-signin").addEventListener("click", async () => {
   el("auth-error").textContent = "";
@@ -167,7 +174,7 @@ function renderEntries() {
     container.innerHTML = `
       <div class="empty-state">
         <div class="icon">✂️</div>
-        <div><strong>No Haircuts Yet</strong></div>
+        <strong>No Haircuts Yet</strong>
         <div>Tap + to log your first haircut.</div>
       </div>`;
     return;
@@ -182,6 +189,7 @@ function renderEntries() {
             <div class="entry-date">${formatDate(date)}</div>
             <div class="entry-relative">${relativeDays(date)}</div>
           </div>
+          <span class="entry-chevron">›</span>
         </div>`;
     })
     .join("");
@@ -241,7 +249,7 @@ el("btn-save-add").addEventListener("click", async () => {
     return;
   }
   el("add-error").textContent = "";
-  el("btn-save-add").textContent = "Saving…";
+  setButtonLoading(el("btn-save-add"), true, "Saving…");
   try {
     const photoURL = await uploadToCloudinary(pendingPhotoFile);
     const entryDate = new Date(dateValue);
@@ -254,7 +262,7 @@ el("btn-save-add").addEventListener("click", async () => {
   } catch (error) {
     el("add-error").textContent = error.message;
   }
-  el("btn-save-add").textContent = "Save";
+  setButtonLoading(el("btn-save-add"), false, "Save");
 });
 
 async function uploadToCloudinary(file) {
@@ -304,7 +312,7 @@ function loadNearbySalons() {
   if (salonsLoaded) return;
   salonsLoaded = true;
   const container = el("salons-content");
-  container.innerHTML = `<div class="status-message">Finding nearby salons…</div>`;
+  container.innerHTML = `<div class="status-message"><div class="spinner"></div>Finding nearby salons…</div>`;
 
   if (!navigator.geolocation) {
     container.innerHTML = `<div class="status-message">Location isn't available in this browser.</div>`;
