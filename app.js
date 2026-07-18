@@ -73,12 +73,32 @@ el("btn-sign-up").addEventListener("click", async () => {
 
 el("btn-google-signin").addEventListener("click", async () => {
   el("auth-error").textContent = "";
+  const nativeBridge = window.webkit?.messageHandlers?.googleSignIn;
+  if (nativeBridge) {
+    nativeBridge.postMessage("signIn");
+    return;
+  }
   try {
     await signInWithRedirect(auth, new GoogleAuthProvider());
   } catch (error) {
     el("auth-error").textContent = error.message;
   }
 });
+
+// Called by native Swift code after a successful native Google sign-in.
+window.completeGoogleSignIn = async (idToken) => {
+  el("auth-error").textContent = "";
+  try {
+    const credential = GoogleAuthProvider.credential(idToken);
+    await signInWithCredential(auth, credential);
+  } catch (error) {
+    el("auth-error").textContent = error.message;
+  }
+};
+
+window.reportGoogleSignInError = (message) => {
+  el("auth-error").textContent = message;
+};
 
 el("btn-apple-signin").addEventListener("click", async () => {
   el("auth-error").textContent = "";
