@@ -10,6 +10,8 @@ import {
   signInWithCredential,
   signInWithRedirect,
   getRedirectResult,
+  signOut,
+  deleteUser,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore,
@@ -139,6 +141,50 @@ window.reportAppleSignInError = (message) => {
 
 getRedirectResult(auth).catch((error) => {
   el("auth-error").textContent = error.message;
+});
+
+// ---------- Account ----------
+
+el("btn-account").addEventListener("click", () => {
+  el("account-email").textContent = currentUser?.email || "";
+  el("account-error").textContent = "";
+  el("modal-account").classList.add("active");
+});
+
+el("btn-close-account").addEventListener("click", () => {
+  el("modal-account").classList.remove("active");
+});
+
+el("btn-sign-out").addEventListener("click", async () => {
+  await signOut(auth);
+  el("modal-account").classList.remove("active");
+});
+
+el("btn-delete-account").addEventListener("click", () => {
+  el("modal-account").classList.remove("active");
+  el("modal-delete-confirm").classList.add("active");
+});
+
+el("btn-cancel-delete").addEventListener("click", () => {
+  el("modal-delete-confirm").classList.remove("active");
+});
+
+el("btn-confirm-delete").addEventListener("click", async () => {
+  const button = el("btn-confirm-delete");
+  setButtonLoading(button, true, "Deleting…");
+  try {
+    await Promise.all(entries.map((entry) => deleteDoc(doc(db, "entries", entry.id))));
+    await deleteUser(currentUser);
+    el("modal-delete-confirm").classList.remove("active");
+  } catch (error) {
+    el("modal-delete-confirm").classList.remove("active");
+    el("modal-account").classList.add("active");
+    el("account-error").textContent =
+      error.code === "auth/requires-recent-login"
+        ? "Please sign out and sign in again, then retry deleting your account."
+        : error.message;
+  }
+  setButtonLoading(button, false, "Delete Account");
 });
 
 onAuthStateChanged(auth, (user) => {

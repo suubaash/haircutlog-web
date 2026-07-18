@@ -39,6 +39,7 @@
   <!-- Haircuts list screen -->
   <section id="screen-haircuts" class="screen">
     <div class="top-bar">
+      <button class="icon-button secondary-icon" id="btn-account">⚙︎</button>
       <h1>Haircuts</h1>
       <button class="icon-button" id="btn-add-entry">＋</button>
     </div>
@@ -85,6 +86,33 @@
         <input type="file" accept="image/*" capture="environment" id="add-photo-input" style="display:none;">
       </label>
       <div class="error-text" id="add-error"></div>
+    </div>
+  </div>
+
+  <!-- Account modal -->
+  <div class="modal-overlay" id="modal-account">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-header">
+        <button class="link-button" id="btn-close-account">Close</button>
+        <h2>Account</h2>
+        <span></span>
+      </div>
+      <div class="account-email" id="account-email"></div>
+      <button class="secondary" id="btn-sign-out">Sign Out</button>
+      <button class="link-button destructive-action full-width" id="btn-delete-account">Delete Account</button>
+      <div class="error-text" id="account-error"></div>
+    </div>
+  </div>
+
+  <!-- Delete account confirm modal -->
+  <div class="modal-overlay" id="modal-delete-confirm">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <h2 class="confirm-title">Delete Your Account?</h2>
+      <p class="confirm-body">This permanently deletes your account and all haircut entries. This can't be undone.</p>
+      <button class="primary destructive-button" id="btn-confirm-delete">Delete Account</button>
+      <button class="secondary" id="btn-cancel-delete">Cancel</button>
     </div>
   </div>
 
