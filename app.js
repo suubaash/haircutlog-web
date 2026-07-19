@@ -434,10 +434,23 @@ function loadNearbySalons() {
       }
     },
     (error) => {
-      container.innerHTML = `<div class="status-message">Couldn't get your location: ${error.message}</div>`;
+      container.innerHTML = `<div class="status-message">${geolocationErrorMessage(error)}</div>`;
       salonsLoaded = false;
     }
   );
+}
+
+function geolocationErrorMessage(error) {
+  switch (error.code) {
+    case error.PERMISSION_DENIED:
+      return "Location access is turned off. Enable it for your browser under System Settings → Privacy & Security → Location Services, then reload this page.";
+    case error.POSITION_UNAVAILABLE:
+      return "Your location couldn't be determined right now. Please try again.";
+    case error.TIMEOUT:
+      return "Finding your location took too long. Please try again.";
+    default:
+      return error.message || "Couldn't get your location.";
+  }
 }
 
 async function fetchNearbySalons(latitude, longitude) {
