@@ -43,6 +43,7 @@
       <h1>Haircuts</h1>
       <button class="icon-button" id="btn-add-entry">＋</button>
     </div>
+    <div id="next-haircut-banner" class="next-haircut-banner"></div>
     <div id="haircuts-content"></div>
   </section>
 
@@ -99,6 +100,10 @@
         <span></span>
       </div>
       <div class="account-email" id="account-email"></div>
+      <div class="form-group">
+        <label for="frequency-input">Haircut Frequency (weeks)</label>
+        <input type="number" id="frequency-input" min="1" max="26" step="1">
+      </div>
       <button class="secondary" id="btn-sign-out">Sign Out</button>
       <button class="link-button destructive-action full-width" id="btn-delete-account">Delete Account</button>
       <div class="error-text" id="account-error"></div>

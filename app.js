@@ -23,16 +23,21 @@ import {
   where,
   orderBy,
   onSnapshot,
+  setDoc,
   Timestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+const DEFAULT_FREQUENCY_DAYS = 28;
+
 let currentUser = null;
 let entries = [];
 let unsubscribeEntries = null;
+let unsubscribeSettings = null;
 let pendingPhotoFile = null;
+let frequencyDays = DEFAULT_FREQUENCY_DAYS;
 
 const el = (id) => document.getElementById(id);
 
@@ -148,7 +153,16 @@ getRedirectResult(auth).catch((error) => {
 el("btn-account").addEventListener("click", () => {
   el("account-email").textContent = currentUser?.email || "";
   el("account-error").textContent = "";
+  el("frequency-input").value = Math.round(frequencyDays / 7);
   el("modal-account").classList.add("active");
+});
+
+el("frequency-input").addEventListener("change", async (event) => {
+  const weeks = Math.max(1, Math.min(26, Number(event.target.value) || 4));
+  event.target.value = weeks;
+  frequencyDays = weeks * 7;
+  renderNextHaircutBanner();
+  await setDoc(doc(db, "settings", currentUser.uid), { frequencyDays }, { merge: true });
 });
 
 el("btn-close-account").addEventListener("click", () => {
@@ -193,12 +207,56 @@ onAuthStateChanged(auth, (user) => {
     el("tab-bar").style.display = "flex";
     showScreen("haircuts");
     listenForEntries();
+    listenForSettings();
   } else {
     el("tab-bar").style.display = "none";
     showScreen("auth");
     if (unsubscribeEntries) unsubscribeEntries();
+    if (unsubscribeSettings) unsubscribeSettings();
+    frequencyDays = DEFAULT_FREQUENCY_DAYS;
   }
 });
+
+// ---------- Settings ----------
+
+function listenForSettings() {
+  unsubscribeSettings = onSnapshot(doc(db, "settings", currentUser.uid), (snapshot) => {
+    frequencyDays = snapshot.exists() ? snapshot.data().frequencyDays || DEFAULT_FREQUENCY_DAYS : DEFAULT_FREQUENCY_DAYS;
+    renderNextHaircutBanner();
+  });
+}
+
+function renderNextHaircutBanner() {
+  const container = el("next-haircut-banner");
+  if (entries.length === 0) {
+    container.innerHTML = "";
+    container.classList.remove("overdue");
+    return;
+  }
+  const lastDate = entries[0].date.toDate();
+  const nextDate = new Date(lastDate);
+  nextDate.setDate(nextDate.getDate() + frequencyDays);
+
+  const daysUntil = Math.round((nextDate.setHours(0, 0, 0, 0) - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24));
+  const isOverdue = daysUntil < 0;
+  container.classList.toggle("overdue", isOverdue);
+
+  let title;
+  if (isOverdue) {
+    title = `Haircut overdue by ${Math.abs(daysUntil)} day${Math.abs(daysUntil) === 1 ? "" : "s"}`;
+  } else if (daysUntil === 0) {
+    title = "Haircut due today";
+  } else {
+    title = `Next haircut in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`;
+  }
+
+  container.innerHTML = `
+    <div class="icon">✂️</div>
+    <div class="text">
+      <div class="title">${title}</div>
+      <div class="subtitle">${formatDate(new Date(nextDate))} · every ${Math.round(frequencyDays / 7)} week${Math.round(frequencyDays / 7) === 1 ? "" : "s"}</div>
+    </div>`;
+}
 
 // ---------- Haircuts list ----------
 
@@ -215,6 +273,7 @@ function listenForEntries() {
 }
 
 function renderEntries() {
+  renderNextHaircutBanner();
   const container = el("haircuts-content");
   if (entries.length === 0) {
     container.innerHTML = `

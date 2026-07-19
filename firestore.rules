@@ -6,5 +6,8 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
       allow update: if request.auth != null && request.auth.uid == resource.data.uid;
     }
+    match /settings/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
   }
 }
