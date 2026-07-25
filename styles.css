@@ -535,16 +535,9 @@ button.secondary:active {
   font-weight: 600;
 }
 
-.salon-tags .rating {
-  color: #E8A400;
-}
-
-.salon-tags .open {
-  color: #34C759;
-}
-
-.salon-tags .closed {
-  color: #FF3B30;
+.salon-tags .hours {
+  color: var(--secondary-text);
+  font-weight: 500;
 }
 
 .status-message {
@@ -654,9 +647,27 @@ button.secondary:active {
 }
 
 .social-button .social-icon {
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
 }
 
-.social-button.google .social-icon {
-  color: #4285F4;
+.social-button.apple {
+  background: #000000;
+  color: #FFFFFF;
+  border-color: #000000;
+}
+
+.social-button.apple .social-icon {
+  margin-top: -2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .social-button.apple {
+    background: #FFFFFF;
+    color: #000000;
+    border-color: #FFFFFF;
+  }
 }
