@@ -1,4 +1,4 @@
-import { firebaseConfig, googlePlacesApiKey, cloudinaryConfig } from "./firebase-config.js";
+import { firebaseConfig, cloudinaryConfig } from "./firebase-config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {
   getAuth,
@@ -430,7 +430,8 @@ function loadNearbySalons() {
         const salons = await fetchNearbySalons(position.coords.latitude, position.coords.longitude);
         renderSalons(salons);
       } catch (error) {
-        container.innerHTML = `<div class="status-message">${error.message}</div>`;
+        container.innerHTML = `<div class="status-message">Couldn't load nearby salons right now. Please try again in a moment.</div>`;
+        salonsLoaded = false;
       }
     },
     (error) => {
@@ -453,41 +454,65 @@ function geolocationErrorMessage(error) {
   }
 }
 
-async function fetchNearbySalons(latitude, longitude) {
-  const response = await fetch("https://places.googleapis.com/v1/places:searchNearby", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": googlePlacesApiKey,
-      "X-Goog-FieldMask":
-        "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.nationalPhoneNumber,places.currentOpeningHours",
-    },
-    body: JSON.stringify({
-      includedTypes: ["hair_salon"],
-      maxResultCount: 20,
-      locationRestriction: {
-        circle: { center: { latitude, longitude }, radius: 3000.0 },
-      },
-    }),
-  });
+const OVERPASS_ENDPOINTS = [
+  "https://overpass.openstreetmap.fr/api/interpreter",
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+];
 
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error?.message || "Failed to load salons.");
+async function fetchOverpass(query) {
+  let lastError;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: query,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        lastError = new Error(`${endpoint} responded with ${response.status}`);
+        continue;
+      }
+      return await response.json();
+    } catch (error) {
+      lastError = error;
+    }
   }
+  throw lastError || new Error("Failed to load salons.");
+}
+
+async function fetchNearbySalons(latitude, longitude) {
+  const query = `[out:json][timeout:20];
+(
+  node["shop"="hairdresser"](around:3000,${latitude},${longitude});
+  way["shop"="hairdresser"](around:3000,${latitude},${longitude});
+);
+out center tags;`;
+
+  const data = await fetchOverpass(query);
 
   const userPoint = { latitude, longitude };
-  return (data.places || [])
-    .map((place) => ({
-      id: place.id,
-      name: place.displayName?.text || "Unknown",
-      address: place.formattedAddress || "",
-      phone: place.nationalPhoneNumber || null,
-      rating: place.rating || null,
-      isOpenNow: place.currentOpeningHours?.openNow ?? null,
-      distanceMeters: haversineMeters(userPoint, place.location),
-    }))
-    .sort((a, b) => a.distanceMeters - b.distanceMeters);
+  return (data.elements || [])
+    .map((element) => {
+      const tags = element.tags || {};
+      const point = element.type === "node" ? { latitude: element.lat, longitude: element.lon } : { latitude: element.center?.lat, longitude: element.center?.lon };
+      const addressParts = [tags["addr:housenumber"], tags["addr:street"], tags["addr:city"]].filter(Boolean);
+      return {
+        id: `${element.type}/${element.id}`,
+        name: tags.name || "Unnamed Salon",
+        address: addressParts.join(" "),
+        phone: tags.phone || tags["contact:phone"] || null,
+        openingHours: tags.opening_hours || null,
+        distanceMeters: haversineMeters(userPoint, point),
+      };
+    })
+    .filter((salon) => Number.isFinite(salon.distanceMeters))
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .slice(0, 20);
 }
 
 function haversineMeters(a, b) {
@@ -502,6 +527,12 @@ function haversineMeters(a, b) {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function renderSalons(salons) {
   const container = el("salons-content");
   if (salons.length === 0) {
@@ -514,18 +545,17 @@ function renderSalons(salons) {
         salon.distanceMeters < 1000
           ? `${Math.round(salon.distanceMeters)} m`
           : `${(salon.distanceMeters / 1000).toFixed(1)} km`;
-      const openTag =
-        salon.isOpenNow === null ? "" : salon.isOpenNow
-          ? `<span class="open">Open now</span>`
-          : `<span class="closed">Closed</span>`;
-      const ratingTag = salon.rating ? `<span class="rating">★ ${salon.rating.toFixed(1)}</span>` : "";
-      const phoneLine = salon.phone ? `<div class="salon-meta"><a href="tel:${salon.phone}">${salon.phone}</a></div>` : "";
+      const addressLine = [salon.address, distanceText].filter(Boolean).join(" · ");
+      const phoneLine = salon.phone
+        ? `<div class="salon-meta"><a href="tel:${escapeHtml(salon.phone)}">${escapeHtml(salon.phone)}</a></div>`
+        : "";
+      const hoursTag = salon.openingHours ? `<span class="hours">${escapeHtml(salon.openingHours)}</span>` : "";
       return `
         <div class="salon-card">
-          <div class="salon-name">${salon.name}</div>
-          <div class="salon-meta">${salon.address} · ${distanceText}</div>
+          <div class="salon-name">${escapeHtml(salon.name)}</div>
+          <div class="salon-meta">${escapeHtml(addressLine)}</div>
           ${phoneLine}
-          <div class="salon-tags">${ratingTag}${openTag}</div>
+          <div class="salon-tags">${hoursTag}</div>
         </div>`;
     })
     .join("");

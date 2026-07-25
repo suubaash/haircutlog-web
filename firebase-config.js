@@ -7,8 +7,6 @@ export const firebaseConfig = {
   appId: "1:690684279561:web:f5b0ad4a98ba154624f1d8",
 };
 
-export const googlePlacesApiKey = "YOUR_WEB_PLACES_API_KEY_HERE";
-
 export const cloudinaryConfig = {
   cloudName: "qxy7ucd5",
   uploadPreset: "haircutlog_unsigned",
