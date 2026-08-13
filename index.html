@@ -26,6 +26,16 @@
       <div class="error-text" id="auth-error"></div>
       <button class="primary" id="btn-sign-in">Sign In</button>
       <button class="secondary" id="btn-sign-up">Create Account</button>
+      <!--
+        Social sign-in is temporarily disabled to clear App Store review.
+        Sign in with Apple errors on the reviewer's iPad at the Firebase
+        credential-exchange step (native flow + presentation verified OK on
+        an iPad simulator; failure is the Firebase Apple-provider audience
+        config for native tokens, aud = bundle id com.subash.HaircutLog).
+        To re-enable once that config is verified: delete the `hidden`
+        attribute below and re-test Sign in with Apple end-to-end on iPad.
+      -->
+      <div id="social-auth" hidden>
       <div class="auth-divider"><span>or</span></div>
       <button class="social-button google" id="btn-google-signin">
         <span class="social-icon" aria-hidden="true">
@@ -46,6 +56,7 @@
         </span>
         <span>Sign in with Apple</span>
       </button>
+      </div>
     </div>
   </section>
 
