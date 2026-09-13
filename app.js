@@ -317,13 +317,15 @@ function relativeDays(date) {
 
 // ---------- Add entry ----------
 
+// Recording a haircut is fundamentally "take/pick a photo", so the + button
+// jumps straight to the camera/library. The New Haircut sheet (with today's
+// date pre-filled and the photo preview) only appears once a photo is chosen.
 el("btn-add-entry").addEventListener("click", () => {
-  el("add-date").value = new Date().toISOString().slice(0, 10);
-  el("add-photo-preview").style.display = "none";
-  el("add-photo-label").style.display = "flex";
   el("add-error").textContent = "";
   pendingPhotoFile = null;
-  el("modal-add").classList.add("active");
+  const input = el("add-photo-input");
+  input.value = ""; // allow re-picking the same file next time
+  input.click();    // must stay in this user-gesture handler to open the picker
 });
 
 el("btn-cancel-add").addEventListener("click", () => {
@@ -332,13 +334,15 @@ el("btn-cancel-add").addEventListener("click", () => {
 
 el("add-photo-input").addEventListener("change", (event) => {
   const file = event.target.files[0];
-  if (!file) return;
+  if (!file) return; // user cancelled the picker — nothing to do
   pendingPhotoFile = file;
+  el("add-date").value = new Date().toISOString().slice(0, 10);
   const reader = new FileReader();
   reader.onload = () => {
     el("add-photo-preview").src = reader.result;
     el("add-photo-preview").style.display = "block";
     el("add-photo-label").style.display = "none";
+    el("modal-add").classList.add("active"); // reveal the sheet only after a photo is chosen
   };
   reader.readAsDataURL(file);
 });
