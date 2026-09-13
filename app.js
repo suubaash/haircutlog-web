@@ -394,14 +394,39 @@ async function uploadToCloudinary(file) {
 
 let currentDetailId = null;
 
+function setDetailDate(date) {
+  el("detail-date").innerHTML = `${formatDate(date)} <span class="edit-hint">✎</span>`;
+  el("detail-date-input").value = date.toISOString().slice(0, 10);
+}
+
 function openDetail(id) {
   const entry = entries.find((e) => e.id === id);
   if (!entry) return;
   currentDetailId = id;
+  el("detail-error").textContent = "";
   el("detail-photo").src = entry.photoURL;
-  el("detail-date").textContent = formatDate(entry.date.toDate());
+  setDetailDate(entry.date.toDate());
   el("modal-detail").classList.add("active");
 }
+
+// Tap the date to correct it — no need to delete and re-upload the photo.
+el("detail-date").addEventListener("click", () => {
+  const input = el("detail-date-input");
+  if (input.showPicker) input.showPicker();
+  else input.click();
+});
+
+el("detail-date-input").addEventListener("change", async (event) => {
+  if (!currentDetailId || !event.target.value) return;
+  const newDate = new Date(event.target.value);
+  el("detail-error").textContent = "";
+  try {
+    await setDoc(doc(db, "entries", currentDetailId), { date: Timestamp.fromDate(newDate) }, { merge: true });
+    setDetailDate(newDate);
+  } catch (error) {
+    el("detail-error").textContent = error.message;
+  }
+});
 
 el("btn-close-detail").addEventListener("click", () => {
   el("modal-detail").classList.remove("active");
